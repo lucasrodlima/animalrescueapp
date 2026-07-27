@@ -22,7 +22,7 @@ func main() {
 			{ID: 2, Name: "Sara", Age: 3, Species: "Cat", Breed: "Persian", Status: models.StatusAvailable},
 			{ID: 3, Name: "Craig", Age: 4, Species: "Dog", Breed: "Pinscher", Status: models.StatusAvailable},
 		},
-		port: "8080",
+		port: ":8080",
 		mu:   &sync.RWMutex{},
 	}
 
@@ -34,6 +34,7 @@ func main() {
 
 	animalHandler := handlers.NewAnimalHandler(cfg.db, cfg.mu)
 	mux.HandleFunc("GET /animals", animalHandler.GetAnimals)
+	mux.HandleFunc("POST /animals", animalHandler.CreateAnimal)
 
 	log.Printf("Server started on %s", cfg.port)
 	if err := http.ListenAndServe(cfg.port, mux); err != nil {

@@ -3,17 +3,20 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/lucasrodlima/animalrescueapp/internal/models"
 )
 
 type AnimalHandler struct {
 	mockDB []models.Animal
+	mu     *sync.RWMutex
 }
 
-func NewAnimalHandler(db []models.Animal) *AnimalHandler {
+func NewAnimalHandler(db []models.Animal, mu *sync.RWMutex) *AnimalHandler {
 	return &AnimalHandler{
 		mockDB: db,
+		mu:     mu,
 	}
 }
 
