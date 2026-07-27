@@ -20,5 +20,5 @@ func (a *AnimalHandler) CreateAnimal(w http.ResponseWriter, r *http.Request) {
 
 	a.mockDB = append(a.mockDB, animal)
 
-	respondJson(w, http.StatusCreated, nil)
+	respondJson(w, http.StatusCreated, animal)
 }

@@ -1,27 +1,33 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"sync"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/lucasrodlima/animalrescueapp/internal/handlers"
-	"github.com/lucasrodlima/animalrescueapp/internal/models"
+	// "github.com/lucasrodlima/animalrescueapp/internal/models"
 )
 
 type apiConfig struct {
-	db   []models.Animal
+	db   *sql.DB
 	port string
 	mu   *sync.RWMutex
 }
 
 func main() {
+
+	db, err := sql.Open("sqlite3", "app.db")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
 	cfg := apiConfig{
-		db: []models.Animal{
-			{ID: 1, Name: "Bob", Age: 2, Species: "Dog", Breed: "Labrador", Status: models.StatusAvailable},
-			{ID: 2, Name: "Sara", Age: 3, Species: "Cat", Breed: "Persian", Status: models.StatusAvailable},
-			{ID: 3, Name: "Craig", Age: 4, Species: "Dog", Breed: "Pinscher", Status: models.StatusAvailable},
-		},
+		db:   db,
 		port: ":8080",
 		mu:   &sync.RWMutex{},
 	}
