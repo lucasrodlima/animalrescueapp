@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/lucasrodlima/animalrescueapp/internal/models"
@@ -22,7 +23,7 @@ func TestGetAnimals(t *testing.T) {
 		{ID: 2, Name: "Sara", Age: 3, Species: "Cat", Breed: "Persian", Status: models.StatusAvailable},
 	}
 
-	animalHandler := NewAnimalHandler(mockDB)
+	animalHandler := NewAnimalHandler(mockDB, &sync.RWMutex{})
 	handler := http.HandlerFunc(animalHandler.GetAnimals)
 	handler.ServeHTTP(rec, req)
 
