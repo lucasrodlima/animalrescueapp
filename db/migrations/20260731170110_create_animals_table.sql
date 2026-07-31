@@ -1,0 +1,14 @@
+-- +goose Up
+CREATE TABLE IF NOT EXISTS animals (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    species TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    breed TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS animals;

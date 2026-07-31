@@ -1,12 +1,47 @@
 package handlers
 
-import "net/http"
+import (
+	"context"
+	"database/sql"
+	"log"
+	"net/http"
+	"time"
 
-func (a *AnimalHandler) GetAnimals(w http.ResponseWriter, r *http.Request) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	"github.com/lucasrodlima/animalrescueapp/internal/models"
+)
 
-	animals := a.mockDB
+func GetAnimals(db *sql.DB) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
 
-	respondJson(w, http.StatusOK, animals)
+		query := `SELECT * FROM animals`
+
+		rows, err := db.QueryContext(ctx, query)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("Query error: %v", err)
+			return
+		}
+		defer rows.Close()
+
+		var animals []models.Animal
+		for rows.Next() {
+			var animal models.Animal
+			if err := rows.Scan(&animal.ID, &animal.Name, &animal.Species, &animal.Age, &animal.Breed, &animal.Status, &animal.CreatedAt, &animal.UpdatedAt); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Printf("Scan error: %v", err)
+				return
+			}
+			animals = append(animals, animal)
+		}
+
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("Rows error: %v", err)
+			return
+		}
+
+		respondJson(w, http.StatusOK, animals)
+	})
 }

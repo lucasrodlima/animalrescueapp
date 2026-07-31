@@ -4,27 +4,37 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sync"
+	"regexp"
 	"testing"
+	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lucasrodlima/animalrescueapp/internal/models"
 )
 
 func TestGetAnimals(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	now := time.Now()
+
+	rows := sqlmock.NewRows([]string{"id", "name", "species", "age", "breed", "status", "created_at", "updated_at"})
+	rows.AddRow(1, "Bob", "Dog", 2, "Labrador", models.StatusAvailable, now, now)
+	rows.AddRow(2, "Sara", "Cat", 3, "Persian", models.StatusAvailable, now, now)
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM animals`)).WillReturnRows(rows)
+
 	req, err := http.NewRequest("GET", "/animals", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
 	rec := httptest.NewRecorder()
-
-	mockDB := []models.Animal{
-		{ID: 1, Name: "Bob", Age: 2, Species: "Dog", Breed: "Labrador", Status: models.StatusAvailable},
-		{ID: 2, Name: "Sara", Age: 3, Species: "Cat", Breed: "Persian", Status: models.StatusAvailable},
-	}
-
-	animalHandler := NewAnimalHandler(mockDB, &sync.RWMutex{})
-	handler := http.HandlerFunc(animalHandler.GetAnimals)
+	handler := GetAnimals(db)
 	handler.ServeHTTP(rec, req)
 
 	if status := rec.Code; status != http.StatusOK {
@@ -45,7 +55,11 @@ func TestGetAnimals(t *testing.T) {
 		t.Errorf("handler returned wrong number of animals: got %v want %v", len(animals), 2)
 	}
 
-	if animals[0].ID == 0 || animals[0].Name == "" {
-		t.Errorf("handler returned empty animal ID or name: %v", animals[0])
+	if len(animals) > 0 && (animals[0].ID != 1 || animals[0].Name != "Bob" || animals[0].Breed != "Labrador") {
+		t.Errorf("unexpected first animal: %+v", animals[0])
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet sql expectations: %v", err)
 	}
 }
