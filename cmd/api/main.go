@@ -30,7 +30,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /animals", handlers.GetAnimals(cfg.db))
-	mux.HandleFunc("GET /animals", handlers.CreateAnimal(cfg.db))
+	mux.HandleFunc("GET /animals/{id}", handlers.GetAnimal(cfg.db))
+	mux.HandleFunc("POST /animals", handlers.CreateAnimal(cfg.db))
 
 	log.Printf("Server started on %s", cfg.port)
 	if err := http.ListenAndServe(cfg.port, mux); err != nil {

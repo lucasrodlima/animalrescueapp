@@ -17,6 +17,7 @@ func TestGetAnimals(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
+
 	defer db.Close()
 
 	now := time.Now()

@@ -14,8 +14,8 @@ const (
 type Animal struct {
 	ID        int          `json:"id"`
 	Name      string       `json:"name"`
-	Age       int          `json:"age"`
 	Species   string       `json:"species"`
+	Age       int          `json:"age"`
 	Breed     string       `json:"breed"`
 	Status    AnimalStatus `json:"status"`
 	CreatedAt time.Time    `json:"created_at"`
