@@ -26,8 +26,6 @@ func TestCreateAnimal(t *testing.T) {
 		Age:       2,
 		Breed:     "Labrador",
 		Status:    models.StatusAvailable,
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	body, err := json.Marshal(animal)
@@ -35,9 +33,12 @@ func TestCreateAnimal(t *testing.T) {
 		t.Fatalf("failed to marshal animal: %v", err)
 	}
 
-	mock.ExpectExec(`INSERT INTO animals`).
-		WithArgs(animal.Name, animal.Species, animal.Age, animal.Breed, animal.Status, animal.CreatedAt, animal.UpdatedAt).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
+		AddRow(1, now, now)
+
+	mock.ExpectQuery(`INSERT INTO animals`).
+		WithArgs(animal.Name, animal.Species, animal.Age, animal.Breed, animal.Status).
+		WillReturnRows(rows)
 
 	req, err := http.NewRequest("POST", "/animals", bytes.NewReader(body))
 	if err != nil {
@@ -63,7 +64,7 @@ func TestCreateAnimal(t *testing.T) {
 		t.Errorf("handler returned invalid JSON: %v", err)
 	}
 
-	if got.Name != animal.Name || got.Species != animal.Species || got.Age != animal.Age || got.Breed != animal.Breed || got.Status != animal.Status {
+	if got.ID != 1 || got.Name != animal.Name || got.Species != animal.Species || got.Age != animal.Age || got.Breed != animal.Breed || got.Status != animal.Status || !got.CreatedAt.Equal(now) || !got.UpdatedAt.Equal(now) {
 		t.Errorf("handler returned unexpected animal: got %+v want %+v", got, animal)
 	}
 
