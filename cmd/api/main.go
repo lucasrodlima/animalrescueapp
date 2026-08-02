@@ -29,10 +29,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
-	})
-
 	mux.HandleFunc("GET /animals", handlers.GetAnimals(cfg.db))
 	mux.HandleFunc("GET /animals", handlers.CreateAnimal(cfg.db))
 
