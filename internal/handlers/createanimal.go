@@ -18,7 +18,7 @@ func CreateAnimal(db *sql.DB) http.HandlerFunc {
 
 		var animal models.Animal
 		if err := json.NewDecoder(r.Body).Decode(&animal); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
@@ -30,8 +30,8 @@ func CreateAnimal(db *sql.DB) http.HandlerFunc {
 			animal.Name, animal.Species, animal.Age, animal.Breed, animal.Status)
 
 		if err := row.Scan(&animal.ID, &animal.CreatedAt, &animal.UpdatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Printf("Error executing query: %v", err)
+			http.Error(w, "failed to create animal", http.StatusInternalServerError)
+			log.Printf("CreateAnimal scan error: %v", err)
 			return
 		}
 

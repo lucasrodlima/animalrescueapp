@@ -25,9 +25,8 @@ func TestGetAnimal(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "name", "species", "age", "breed", "status", "created_at", "updated_at"})
 	rows.AddRow(1, "Bob", "Dog", 2, "Labrador", models.StatusAvailable, now, now)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM animals
-				  WHERE id = ?`)).
-		WithArgs("1").
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ?`)).
+		WithArgs(1).
 		WillReturnRows(rows)
 
 	req, err := http.NewRequest("GET", "/animals/1", nil)
@@ -70,9 +69,8 @@ func TestGetAnimal_NotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM animals
-				  WHERE id = ?`)).
-		WithArgs("99").
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ?`)).
+		WithArgs(99).
 		WillReturnError(sql.ErrNoRows)
 
 	req, err := http.NewRequest("GET", "/animals/99", nil)
@@ -85,11 +83,37 @@ func TestGetAnimal_NotFound(t *testing.T) {
 	handler := GetAnimal(db)
 	handler.ServeHTTP(rec, req)
 
-	if status := rec.Code; status != http.StatusInternalServerError {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
+	if status := rec.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unmet sql expectations: %v", err)
+	}
+}
+
+func TestGetAnimal_BadID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	req, err := http.NewRequest("GET", "/animals/abc", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.SetPathValue("id", "abc")
+
+	rec := httptest.NewRecorder()
+	handler := GetAnimal(db)
+	handler.ServeHTTP(rec, req)
+
+	if status := rec.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unexpected sql interaction: %v", err)
 	}
 }
