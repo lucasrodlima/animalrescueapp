@@ -26,7 +26,7 @@ func TestGetAnimals(t *testing.T) {
 	rows.AddRow(1, "Bob", "Dog", 2, "Labrador", models.StatusAvailable, now, now)
 	rows.AddRow(2, "Sara", "Cat", 3, "Persian", models.StatusAvailable, now, now)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals`)).WillReturnRows(rows)
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE deleted_at IS NULL`)).WillReturnRows(rows)
 
 	req, err := http.NewRequest("GET", "/animals", nil)
 	if err != nil {

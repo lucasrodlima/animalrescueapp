@@ -32,7 +32,7 @@ func UpdateAnimal(db *sql.DB) http.HandlerFunc {
 
 		query := `UPDATE animals
 				  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-				  WHERE id = ?
+				  WHERE id = ? AND deleted_at IS NULL
 				  RETURNING id, created_at, updated_at`
 
 		row := db.QueryRowContext(ctx, query, animal.Name,

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 
@@ -37,7 +38,10 @@ func TestUpdateAnimal(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 		AddRow(1, now.Add(-24*time.Hour), now)
 
-	mock.ExpectQuery(`UPDATE animals`).
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE animals
+				  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+				  WHERE id = ? AND deleted_at IS NULL
+				  RETURNING id, created_at, updated_at`)).
 		WithArgs(animal.Name, animal.Species, animal.Age, animal.Breed, animal.Status, 1).
 		WillReturnRows(rows)
 
@@ -113,7 +117,10 @@ func TestUpdateAnimal_NotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery(`UPDATE animals`).
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE animals
+				  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+				  WHERE id = ? AND deleted_at IS NULL
+				  RETURNING id, created_at, updated_at`)).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 99).
 		WillReturnError(sql.ErrNoRows)
 

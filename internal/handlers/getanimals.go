@@ -15,7 +15,7 @@ func GetAnimals(db *sql.DB) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		defer cancel()
 
-		query := `SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals`
+		query := `SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE deleted_at IS NULL`
 
 		rows, err := db.QueryContext(ctx, query)
 		if err != nil {

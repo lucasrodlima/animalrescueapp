@@ -17,7 +17,7 @@ func GetAnimal(db *sql.DB) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		defer cancel()
 
-		query := `SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ?`
+		query := `SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ? AND deleted_at IS NULL`
 
 		id, err := strconv.Atoi(r.PathValue("id"))
 		if err != nil {
