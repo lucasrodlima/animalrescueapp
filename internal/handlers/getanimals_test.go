@@ -64,3 +64,41 @@ func TestGetAnimals(t *testing.T) {
 		t.Errorf("unmet sql expectations: %v", err)
 	}
 }
+
+func TestGetAnimals_AllSoftDeleted(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	rows := sqlmock.NewRows([]string{"id", "name", "species", "age", "breed", "status", "created_at", "updated_at"})
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE deleted_at IS NULL`)).WillReturnRows(rows)
+
+	req, err := http.NewRequest("GET", "/animals", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	handler := GetAnimals(db)
+	handler.ServeHTTP(rec, req)
+
+	if status := rec.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code when all animals are soft-deleted: got %v want %v", status, http.StatusOK)
+	}
+
+	var animals []models.Animal
+	if err := json.NewDecoder(rec.Body).Decode(&animals); err != nil {
+		t.Errorf("handler returned invalid JSON: %v", err)
+	}
+
+	if len(animals) != 0 {
+		t.Errorf("handler returned soft-deleted animals: got %v want 0", len(animals))
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet sql expectations: %v", err)
+	}
+}

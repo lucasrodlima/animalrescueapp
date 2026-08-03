@@ -118,9 +118,9 @@ func TestUpdateAnimal_NotFound(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE animals
-				  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-				  WHERE id = ? AND deleted_at IS NULL
-				  RETURNING id, created_at, updated_at`)).
+					  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+					  WHERE id = ? AND deleted_at IS NULL
+					  RETURNING id, created_at, updated_at`)).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 99).
 		WillReturnError(sql.ErrNoRows)
 
@@ -137,6 +137,40 @@ func TestUpdateAnimal_NotFound(t *testing.T) {
 
 	if status := rec.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet sql expectations: %v", err)
+	}
+}
+
+func TestUpdateAnimal_SoftDeleted(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE animals
+					  SET name = ?, species = ?, age = ?, breed = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+					  WHERE id = ? AND deleted_at IS NULL
+					  RETURNING id, created_at, updated_at`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 7).
+		WillReturnError(sql.ErrNoRows)
+
+	req, err := http.NewRequest("PUT", "/animals/7", bytes.NewBufferString(`{"name":"Ghost","species":"Dog","age":4,"breed":"Mixed","status":0}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.SetPathValue("id", "7")
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler := UpdateAnimal(db)
+	handler.ServeHTTP(rec, req)
+
+	if status := rec.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code for soft-deleted animal: got %v want %v", status, http.StatusNotFound)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

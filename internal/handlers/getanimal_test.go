@@ -25,7 +25,7 @@ func TestGetAnimal(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "name", "species", "age", "breed", "status", "created_at", "updated_at"})
 	rows.AddRow(1, "Bob", "Dog", 2, "Labrador", models.StatusAvailable, now, now)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ?`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ? AND deleted_at IS NULL`)).
 		WithArgs(1).
 		WillReturnRows(rows)
 
@@ -69,7 +69,7 @@ func TestGetAnimal_NotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ?`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ? AND deleted_at IS NULL`)).
 		WithArgs(99).
 		WillReturnError(sql.ErrNoRows)
 
@@ -85,6 +85,36 @@ func TestGetAnimal_NotFound(t *testing.T) {
 
 	if status := rec.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unmet sql expectations: %v", err)
+	}
+}
+
+func TestGetAnimal_SoftDeleted(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, species, age, breed, status, created_at, updated_at FROM animals WHERE id = ? AND deleted_at IS NULL`)).
+		WithArgs(7).
+		WillReturnError(sql.ErrNoRows)
+
+	req, err := http.NewRequest("GET", "/animals/7", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.SetPathValue("id", "7")
+
+	rec := httptest.NewRecorder()
+	handler := GetAnimal(db)
+	handler.ServeHTTP(rec, req)
+
+	if status := rec.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code for soft-deleted animal: got %v want %v", status, http.StatusNotFound)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
