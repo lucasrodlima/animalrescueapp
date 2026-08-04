@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,16 +23,20 @@ func DeleteAnimal(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// change to exec and see the error with result
-		row := db.QueryRowContext(ctx, query, id)
-		if row.Err() != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				http.Error(w, "couldn't find animal", http.StatusNotFound)
-				return
-			}
+		result, err := db.ExecContext(ctx, query, id)
+		if err != nil {
+			http.Error(w, "error deleting animal", http.StatusInternalServerError)
+			return
+		}
 
-			http.Error(w, "query error", http.StatusInternalServerError)
-			log.Printf("Error during query: %v", err)
+		rows, err := result.RowsAffected()
+		if err != nil {
+			http.Error(w, "error deleting animal", http.StatusInternalServerError)
+			return
+		}
+
+		if rows == 0 {
+			http.Error(w, "couldn't find animal", http.StatusNotFound)
 			return
 		}
 
