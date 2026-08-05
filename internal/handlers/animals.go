@@ -16,9 +16,9 @@ func respondJson(w http.ResponseWriter, status int, data any) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func GetAnimals(repo *database.DB) http.HandlerFunc {
+func GetAnimals(db *database.DB) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		animals, err := repo.ReadAnimals()
+		animals, err := db.ReadAnimals()
 		if err != nil {
 			http.Error(w, "couldn't list animals", http.StatusInternalServerError)
 			log.Println(err)
@@ -29,9 +29,9 @@ func GetAnimals(repo *database.DB) http.HandlerFunc {
 	})
 }
 
-func GetAnimal(repo *database.DB) http.HandlerFunc {
+func GetAnimal(db *database.DB) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		animal, err := repo.ReadAnimalByID(r.PathValue("id"))
+		animal, err := db.ReadAnimalByID(r.PathValue("id"))
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "couldn't find animal", http.StatusNotFound)
