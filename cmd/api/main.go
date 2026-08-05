@@ -1,29 +1,24 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
+	"github.com/lucasrodlima/animalrescueapp/internal/database"
 	"github.com/lucasrodlima/animalrescueapp/internal/handlers"
-	_ "modernc.org/sqlite"
 )
 
 type apiConfig struct {
-	db   *sql.DB
+	db   *database.DB
 	port string
 }
 
 func main() {
-
-	db, err := sql.Open("sqlite3", "app.db")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
+	newDB := database.NewDatabase()
+	defer newDB.Client.Close()
 
 	cfg := apiConfig{
-		db:   db,
+		db:   newDB,
 		port: ":8080",
 	}
 
